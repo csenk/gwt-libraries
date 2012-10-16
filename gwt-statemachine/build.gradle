@@ -1,0 +1,10 @@
+dependencies {
+	compile group: 'com.google.inject', name: 'guice', version: guice_version
+	compile group: 'com.google.inject.extensions', name: 'guice-servlet', version: guice_version
+	compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: guice_version
+
+	compile "com.google.guava:guava-gwt:12.0"
+	compile group: 'com.google.gwt.inject', name: 'gin', version: gin_version
+	
+	testCompile "junit:junit:4.10"
+}

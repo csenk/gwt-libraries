@@ -1,0 +1,61 @@
+/**
+ * Configure all sub projects with standard java and maven settings for dependencies and deployment.
+ */
+subprojects {
+	apply plugin: 'java'
+	apply plugin: 'maven'
+
+	group = "de.csenk.gwt"
+	version = "0.0.1-SNAPSHOT"
+
+	repositories {
+		mavenLocal()
+		mavenCentral()
+	}
+}
+
+ext.gwt_version = '2.4.0'
+ext.guice_version = '3.0'
+ext.gin_version = '2.0.0'
+
+/**
+ * Configure all GWT modules with standard settings to compile and test gwt modules.
+ */
+configure(subprojects.findAll { project -> isGWTModule(project) }) {
+
+	configurations { 
+		gwt
+		compile {
+			extendsFrom gwt
+		}
+	}
+	
+	dependencies {
+		gwt group: 'com.google.gwt', name: 'gwt-user', version: gwt_version
+		gwt group: 'com.google.gwt', name: 'gwt-dev', version: gwt_version
+	}
+	
+	test {
+		workingDir = project.buildDir
+		
+		/* Important: GWT TestCases needs the src. Therefore the test/main srcDirs must be added to the classpath */
+		classpath = files(project.sourceSets.main.allJava.srcDirs) + classpath
+		classpath = files(project.sourceSets.test.allJava.srcDirs) + classpath
+		
+		/* Important: GWT TestCases needs gwt-dev. Adding this as testRuntime dependencies would also work, but the google eclipse plugin starts to act weird */
+		classpath = classpath + configurations.gwt.fileCollection()
+	}
+
+	jar {
+		/* GWT modules needs sources packed right beside the compiled class files. */
+		from project.sourceSets.main.allJava
+	}
+
+}
+
+/**
+ * Determines if a Project is a GWT module by searching for a file ending with "gwt.xml".
+ */
+def isGWTModule(project) {
+	project.sourceSets.main.resources.files.findAll { file -> file.name.endsWith("gwt.xml") } .size() > 0
+}
