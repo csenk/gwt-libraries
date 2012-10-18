@@ -1,3 +1,19 @@
+/*
+ * Copyright 2012 Christian Senk
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.csenk.gwt.statemachine.shared.impl;
 
 import java.util.Set;
@@ -9,11 +25,21 @@ import com.google.common.collect.Table;
 
 import de.csenk.gwt.statemachine.shared.ContinuativeStateMachineBuilder;
 import de.csenk.gwt.statemachine.shared.StateMachine;
+import de.csenk.gwt.statemachine.shared.StateMachineBuilder;
 import de.csenk.gwt.statemachine.shared.Transition;
 import de.csenk.gwt.statemachine.shared.TransitionBuilder;
 import de.csenk.gwt.statemachine.shared.TransitionListener;
 import de.csenk.gwt.statemachine.shared.TransitionToBuilder;
 
+/**
+ * @author senk.christian@gmail.com
+ *
+ * Default implementation of {@link StateMachineBuilder}.
+ * Uses closures to ease the building of a new state machine.
+ *
+ * @param <S>
+ * @param <E>
+ */
 public class StateMachineBuilderImpl<S extends Enum<S>, E extends Enum<E>> implements de.csenk.gwt.statemachine.shared.StateMachineBuilder<S, E> {
 
 	private class TransitionToBuilderImpl implements TransitionToBuilder<S, E> {
@@ -152,10 +178,12 @@ public class StateMachineBuilderImpl<S extends Enum<S>, E extends Enum<E>> imple
 	 */
 	@Override
 	public StateMachine<S, E> create(S state) {
-		return new StateMachineImpl<S, E>(HashBasedTable.create(transitions));
+		return new StateMachineImpl<S, E>(state, HashBasedTable.create(transitions));
 	}
 
 	/**
+	 * Adds one or more transitions (depends on the numbers of events specified) between two states.
+	 * 
 	 * @param fromState
 	 * @param toState
 	 * @param events
@@ -166,6 +194,8 @@ public class StateMachineBuilderImpl<S extends Enum<S>, E extends Enum<E>> imple
 	}
 	
 	/**
+	 * Adds a listener to one or more established transitions (depends on the numbers of events specified).
+	 * 
 	 * @param fromState
 	 * @param toState
 	 * @param events
