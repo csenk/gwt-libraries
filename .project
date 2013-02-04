@@ -12,12 +12,12 @@
 		</buildCommand>
 	</buildSpec>
 	<natures>
-		<nature>com.springsource.sts.gradle.core.nature</nature>
+		<nature>org.springsource.ide.eclipse.gradle.core.nature</nature>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
 	<filteredResources>
 		<filter>
-			<id>1350468255256</id>
+			<id>1359742817722</id>
 			<name></name>
 			<type>10</type>
 			<matcher>
@@ -26,6 +26,10 @@
 					<matcher>
 						<id>org.eclipse.ui.ide.multiFilter</id>
 						<arguments>1.0-projectRelativePath-equals-true-false-gwt-statemachine</arguments>
+					</matcher>
+					<matcher>
+						<id>org.eclipse.ui.ide.multiFilter</id>
+						<arguments>1.0-projectRelativePath-equals-true-false-gwt-commons</arguments>
 					</matcher>
 				</arguments>
 			</matcher>

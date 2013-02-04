@@ -2,3 +2,5 @@
 .settings/
 bin/
 build/
+www-test/
+gwt-unitCache/
