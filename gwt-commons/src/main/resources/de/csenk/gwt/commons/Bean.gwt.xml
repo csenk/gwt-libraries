@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module>
+	<inherits name="com.google.web.bindery.autobean.AutoBean" />
+	
+	<source path="bean/client" />
+	<source path="bean/shared" />
+
+	<generate-with class="de.csenk.gwt.commons.bean.rebind.observe.impl.ObservableBeanFactoryGeneratorImpl">
+		<when-type-assignable class="de.csenk.gwt.commons.bean.shared.observe.ObservableBeanFactory" />
+	</generate-with>
+	
+</module>

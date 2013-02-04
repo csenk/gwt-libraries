@@ -1,0 +1,5 @@
+dependencies {
+	compile "com.google.guava:guava-gwt:12.0"
+	
+	testCompile "junit:junit:4.10"
+}

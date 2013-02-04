@@ -1,1 +1,1 @@
-include "gwt-statemachine"
+include "gwt-statemachine", "gwt-commons"
