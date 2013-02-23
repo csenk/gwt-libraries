@@ -20,8 +20,10 @@ import com.google.gwt.event.shared.HandlerRegistration;
 import com.google.gwt.event.shared.HasHandlers;
 
 /**
+ * Interface which marks a type as aware of {@link PropertyValueChangeHandler} to handle
+ * {@link PropertyValueChangeEvent}.
+ * 
  * @author senk.christian@googlemail.com
- *
  */
 public interface HasPropertyValueChangeHandlers<T> extends HasHandlers {
 	

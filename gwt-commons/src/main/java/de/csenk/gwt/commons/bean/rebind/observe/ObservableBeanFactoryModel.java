@@ -65,7 +65,7 @@ public class ObservableBeanFactoryModel {
 		final Map<JClassType, ObservableBeanModel> beans = Maps.newHashMap();
 		
 		for (ObservableBeanFactoryMethodModel methodModel : beanFactoryMethods) {
-			beans.put(methodModel.getBeanModel().getSourceType(), methodModel.getBeanModel());
+			beans.put(methodModel.getBeanModel().getType(), methodModel.getBeanModel());
 		}
 		
 		return ImmutableMap.copyOf(beans);

@@ -19,6 +19,7 @@ package de.csenk.gwt.commons.bean.rebind.observe.impl;
 import java.io.PrintWriter;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.impl.WeakMapping;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
@@ -28,15 +29,15 @@ import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.editor.rebind.model.ModelUtils;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
-import com.google.web.bindery.autobean.gwt.rebind.model.JBeanMethod;
 import com.google.web.bindery.autobean.shared.AutoBean;
 import com.google.web.bindery.autobean.shared.AutoBeanFactory;
 
 import de.csenk.gwt.commons.bean.rebind.SourceGeneration;
 import de.csenk.gwt.commons.bean.rebind.observe.ObservableBeanFactoryMethodModel;
 import de.csenk.gwt.commons.bean.rebind.observe.ObservableBeanFactoryModel;
-import de.csenk.gwt.commons.bean.rebind.observe.ObservableBeanMethodModel;
 import de.csenk.gwt.commons.bean.rebind.observe.ObservableBeanModel;
+import de.csenk.gwt.commons.bean.rebind.observe.ObservableBeanPropertyModel;
+import de.csenk.gwt.commons.bean.shared.observe.ObservableBean;
 import de.csenk.gwt.commons.bean.shared.observe.PropertyValueChangeEvent;
 import de.csenk.gwt.commons.bean.shared.observe.impl.AbstractObservableBean;
 import de.csenk.gwt.commons.bean.shared.observe.impl.AbstractObservableBeanFactory;
@@ -130,7 +131,7 @@ public class ObservableBeanFactoryCreator {
 		beanFactoryWriter.println("public interface AutoBeanFactory extends %s {", autoBeanFactoryInterface.getQualifiedSourceName());
 		
 		for (ObservableBeanModel beanModel : model.getBeans().values()) {
-			beanFactoryWriter.indentln("%s<%s> create%s();", AutoBean.class.getSimpleName(), beanModel.getSourceType().getQualifiedSourceName(), beanModel.getTopLevelSourceTypeName());
+			beanFactoryWriter.indentln("%s<%s> create%s();", AutoBean.class.getSimpleName(), beanModel.getType().getQualifiedSourceName(), beanModel.getTopLevelTypeName());
 		}
 		beanFactoryWriter.println("}");
 		beanFactoryWriter.println();
@@ -144,15 +145,15 @@ public class ObservableBeanFactoryCreator {
 	 * 
 	 */
 	private void writeObservableBean(ObservableBeanModel beanModel) {
-		final String packageName = beanModel.getSourceType().getPackage().getName();
+		final String packageName = beanModel.getType().getPackage().getName();
 		
-		final PrintWriter targetTypePrintWriter = context.tryCreate(logger, packageName, beanModel.getSimpleTargetTypeName());
+		final PrintWriter targetTypePrintWriter = context.tryCreate(logger, packageName, beanModel.getSimpleImplementationTypeName());
 	    if (targetTypePrintWriter == null) {
 	    	return;
 	    }
 	    
-	    final ClassSourceFileComposerFactory beanFactory = new ClassSourceFileComposerFactory(packageName, beanModel.getSimpleTargetTypeName());
-		beanFactory.setSuperclass(String.format("%s<%s>", AbstractObservableBean.class.getSimpleName(), beanModel.getSourceType().getQualifiedSourceName()));
+	    final ClassSourceFileComposerFactory beanFactory = new ClassSourceFileComposerFactory(packageName, beanModel.getSimpleImplementationTypeName());
+		beanFactory.setSuperclass(String.format("%s<%s>", AbstractObservableBean.class.getSimpleName(), beanModel.getType().getQualifiedSourceName()));
 		
 		beanFactory.addImport(AbstractObservableBean.class.getCanonicalName());
 		beanFactory.addImport(AbstractObservableProperty.class.getCanonicalName());
@@ -175,7 +176,7 @@ public class ObservableBeanFactoryCreator {
 	 * @param beanModel 
 	 */
 	private void writeAsMethod(SourceWriter beanWriter, ObservableBeanModel beanModel) {
-		beanWriter.println("public %s as() {", beanModel.getSourceType().getQualifiedSourceName());
+		beanWriter.println("public %s as() {", beanModel.getType().getQualifiedSourceName());
 		beanWriter.indentln("return shim;");
 		beanWriter.println("}");
 		beanWriter.println();
@@ -186,7 +187,7 @@ public class ObservableBeanFactoryCreator {
 	 * @param beanModel
 	 */
 	private void writeConstructor(SourceWriter beanWriter, ObservableBeanModel beanModel) {
-		beanWriter.println("public %s(%s observed) {", beanModel.getSimpleTargetTypeName(), beanModel.getSourceType().getName());
+		beanWriter.println("public %s(%s observed) {", beanModel.getSimpleImplementationTypeName(), beanModel.getType().getName());
 		beanWriter.indentln("super(observed);");
 		beanWriter.println("}");
 		beanWriter.println();
@@ -198,7 +199,7 @@ public class ObservableBeanFactoryCreator {
 	 * 
 	 */
 	private void writeBeanShimField(SourceWriter beanWriter, ObservableBeanModel beanModel) {
-		beanWriter.println("private final %1$s shim = new %1$s() {", beanModel.getSourceType().getQualifiedSourceName());
+		beanWriter.println("private final %1$s shim = new %1$s() {", beanModel.getType().getQualifiedSourceName());
 		beanWriter.indent();
 		beanWriter.println();
 
@@ -208,6 +209,9 @@ public class ObservableBeanFactoryCreator {
 		beanWriter.outdent();
 		beanWriter.println("};");
 		beanWriter.println();
+		
+		beanWriter.println("{ %s.set(shim, %s.class.getName(), this); }", WeakMapping.class.getCanonicalName(), ObservableBean.class.getCanonicalName());
+		beanWriter.println();
 	}
 
 	/**
@@ -215,23 +219,20 @@ public class ObservableBeanFactoryCreator {
 	 * @param beanModel
 	 */
 	private void writeShimFields(SourceWriter beanWriter, ObservableBeanModel beanModel) {
-		for (ObservableBeanMethodModel methodModel : beanModel.getMethods()) {
-			if (methodModel.getAction() != JBeanMethod.SET)
-				continue;
-			
-			beanWriter.println("private final %1$s<%2$s> %3$s = new %1$s<%2$s>() {", AbstractObservableProperty.class.getSimpleName(), ModelUtils.getQualifiedBaseSourceName(methodModel.getPropertyType()), methodModel.getPropertyName());
+		for (ObservableBeanPropertyModel propertyModel : beanModel.getProperties().values()) {
+			beanWriter.println("private final %1$s<%2$s> %3$s = new %1$s<%2$s>() {", AbstractObservableProperty.class.getSimpleName(), ModelUtils.getQualifiedBaseSourceName(propertyModel.getType()), propertyModel.getName());
 			beanWriter.indent();
 			beanWriter.println();
 			
-			beanWriter.println("public void set(%s value) {", ModelUtils.getQualifiedBaseSourceName(methodModel.getPropertyType()));
-			beanWriter.indent();
-			
-			//TODO Get old and new value
-			beanWriter.println("fireEvent(new %s(null, null));", PropertyValueChangeEvent.class.getSimpleName());
-			beanWriter.println("%s.this.observed.%s(value);", beanModel.getSimpleTargetTypeName(), methodModel.getMethod().getName());
-			
-			beanWriter.outdent();
+			beanWriter.println("public void setValue(%s value) {", ModelUtils.getQualifiedBaseSourceName(propertyModel.getType()));
+			beanWriter.indentln("%s.this.observed.%s(value);", beanModel.getSimpleImplementationTypeName(), propertyModel.getSetter().getMethod().getName());
 			beanWriter.println("}");
+			beanWriter.println();
+			
+			beanWriter.println("public %s getValue() {", ModelUtils.getQualifiedBaseSourceName(propertyModel.getType()));
+			beanWriter.indentln("return %s.this.observed.%s();", beanModel.getSimpleImplementationTypeName(), propertyModel.getGetter().getMethod().getName());
+			beanWriter.println("}");
+			beanWriter.println();
 			
 			beanWriter.outdent();
 			beanWriter.println("};");
@@ -244,21 +245,15 @@ public class ObservableBeanFactoryCreator {
 	 * @param beanModel
 	 */
 	private void writeShimMethods(SourceWriter beanWriter, ObservableBeanModel beanModel) {
-		for (ObservableBeanMethodModel methodModel : beanModel.getMethods()) {
-			beanWriter.println("public %s {", SourceGeneration.getBaseMethodDeclaration(methodModel.getMethod()));
-			beanWriter.indent();
+		for (ObservableBeanPropertyModel propertyModel : beanModel.getProperties().values()) {
+			beanWriter.println("public %s {", SourceGeneration.getBaseMethodDeclaration(propertyModel.getSetter().getMethod()));
+			beanWriter.indentln("this.%s.set(%s);", propertyModel.getName(), propertyModel.getSetter().getMethod().getParameters()[0].getName());
+			beanWriter.println("}");
+			beanWriter.println();
 			
-			switch (methodModel.getAction()) {
-			case GET:
-				beanWriter.println("%s.this.lastAccessedProperty = this.%s;", beanModel.getSimpleTargetTypeName(), methodModel.getPropertyName());
-				beanWriter.println("return %s.this.observed.%s();", beanModel.getSimpleTargetTypeName(), methodModel.getMethod().getName());
-				break;
-			case SET:
-				beanWriter.println("this.%s.set(%s);", methodModel.getPropertyName(), methodModel.getMethod().getParameters()[0].getName());
-				break;
-			}
-			
-			beanWriter.outdent();
+			beanWriter.println("public %s {", SourceGeneration.getBaseMethodDeclaration(propertyModel.getGetter().getMethod()));
+			beanWriter.indentln("%s.this.lastAccessedProperty = this.%s;", beanModel.getSimpleImplementationTypeName(), propertyModel.getName());
+			beanWriter.indentln("return %s.get();", propertyModel.getName());
 			beanWriter.println("}");
 			beanWriter.println();
 		}
@@ -271,13 +266,15 @@ public class ObservableBeanFactoryCreator {
 		for (ObservableBeanFactoryMethodModel methodModel : model.getBeanFactoryMethods()) {
 			final JMethod method = methodModel.getMethod();
 			
-			beanFactoryWriter.println("public %s %s() {", method.getReturnType().getParameterizedQualifiedSourceName(), method.getName());
+			final String parameterDeclaration = methodModel.getParameterType() != null ? String.format("%s parameter", methodModel.getParameterType().getQualifiedSourceName()) : "";
+			beanFactoryWriter.println("public %s %s(%s) {", method.getReturnType().getParameterizedQualifiedSourceName(), method.getName(), parameterDeclaration);
 			beanFactoryWriter.indent();
 			
-			beanFactoryWriter.println("final AutoBean<%s> observed = autoBeanFactory.create%s();", methodModel.getBeanModel().getSourceType().getQualifiedSourceName(), methodModel.getBeanModel().getTopLevelSourceTypeName());
+			final String variableAssignment = methodModel.getParameterType() == null ? String.format("autoBeanFactory.create%s().as()", methodModel.getBeanModel().getTopLevelTypeName()) : "parameter";
+			beanFactoryWriter.println("final %s observed = %s;", methodModel.getBeanModel().getType().getQualifiedSourceName(), variableAssignment);
 			
 			final ObservableBeanModel beanModel = methodModel.getBeanModel();
-			beanFactoryWriter.println("return new %s(observed.as());", beanModel.getQualifiedTargetTypeName());
+			beanFactoryWriter.println("return new %s(observed);", beanModel.getQualifiedImplementationTypeName());
 			
 			beanFactoryWriter.outdent();
 			beanFactoryWriter.println("}");

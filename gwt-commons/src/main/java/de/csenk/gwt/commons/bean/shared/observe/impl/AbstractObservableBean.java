@@ -16,6 +16,8 @@
 
 package de.csenk.gwt.commons.bean.shared.observe.impl;
 
+import com.google.gwt.core.client.impl.WeakMapping;
+
 import de.csenk.gwt.commons.bean.shared.observe.ObservableBean;
 import de.csenk.gwt.commons.bean.shared.observe.ObservableProperty;
 
@@ -34,6 +36,7 @@ public abstract class AbstractObservableBean<T> implements ObservableBean<T> {
 	 */
 	protected AbstractObservableBean(T observed) {
 		this.observed = observed;
+		WeakMapping.set(observed, ObservableBean.class.getName(), this);
 	}
 
 	/**

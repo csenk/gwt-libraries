@@ -70,5 +70,6 @@ public final class SourceGeneration {
 		
 		return String.format("%s %s(%s) %s", returnName, method.getName(), paramListDeclaration, throwsDeclaration);
 	}
+
 	
 }

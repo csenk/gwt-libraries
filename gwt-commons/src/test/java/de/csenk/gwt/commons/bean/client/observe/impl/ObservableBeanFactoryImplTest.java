@@ -22,6 +22,7 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.junit.client.GWTTestCase;
 
 import de.csenk.gwt.commons.bean.shared.observe.ObservableBean;
+import de.csenk.gwt.commons.bean.shared.observe.ObservableBeans;
 import de.csenk.gwt.commons.bean.shared.observe.PropertyValueChangeEvent;
 import de.csenk.gwt.commons.bean.shared.observe.PropertyValueChangeHandler;
 
@@ -38,11 +39,61 @@ public class ObservableBeanFactoryImplTest extends GWTTestCase {
 		
 		String getName();
 		
+		void setAge(int age);
+		
+		int getAge();
+		
 	}
 	
 	public interface ObservableBeanFactory extends de.csenk.gwt.commons.bean.shared.observe.ObservableBeanFactory {
 		
 		ObservableBean<Actor> create();
+		
+		ObservableBean<Actor> create(Actor original);
+		
+	}
+	
+	public class ActorBean implements Actor {
+		
+		private String name;
+		private int age;
+		
+		/**
+		 * @param name
+		 * @param age
+		 */
+		public ActorBean(String name, int age) {
+			this.name = name;
+			this.age = age;
+		}
+
+		/**
+		 * @return the name
+		 */
+		public String getName() {
+			return name;
+		}
+		
+		/**
+		 * @param name the name to set
+		 */
+		public void setName(String name) {
+			this.name = name;
+		}
+		
+		/**
+		 * @return the age
+		 */
+		public int getAge() {
+			return age;
+		}
+		
+		/**
+		 * @param age the age to set
+		 */
+		public void setAge(int age) {
+			this.age = age;
+		}
 		
 	}
 
@@ -81,6 +132,22 @@ public class ObservableBeanFactoryImplTest extends GWTTestCase {
 	}
 	
 	@Test
+	public void testProperty() {
+		final ObservableBeanFactory actorObservableBeanFactory = GWT.create(ObservableBeanFactory.class);
+		
+		final ObservableBean<Actor> actorObservableBean = actorObservableBeanFactory.create();
+		final Actor actor = actorObservableBean.as();
+		
+actor.setName("Sheldon"); 	//Event -> oldValue=null, newValue="Sheldon"
+actor.setName("Sheldon"); 	//No event
+actor.setName("Wollowitz"); 	//Event -> oldValue="Sheldon", newValue="Wollowitz"
+		
+		assertEquals("Sheldon", actor.getName());
+		
+		assertEquals(0, actor.getAge());
+	}
+	
+	@Test
 	public void testPropertyValueChangeEvent() {
 		final ObservableBeanFactory actorObservableBeanFactory = GWT.create(ObservableBeanFactory.class);
 		
@@ -98,6 +165,54 @@ public class ObservableBeanFactoryImplTest extends GWTTestCase {
 		});
 		
 		actor.setName("Sheldon");
+	}
+	
+	@Test
+	public void testWrapping() {
+		final ObservableBeanFactory actorObservableBeanFactory = GWT.create(ObservableBeanFactory.class);
+		
+		final Actor actor = new ActorBean("Sheldon", 23);
+		final ObservableBean<Actor> actorObservableBean = actorObservableBeanFactory.create(actor);
+		
+		assertEquals(23, actorObservableBean.as().getAge());
+		assertEquals("Sheldon", actorObservableBean.as().getName());
+		
+		actorObservableBean.as().setAge(19);
+		assertEquals(19, actor.getAge());
+		
+		actorObservableBean.as().setName("Wollowitz");
+		assertEquals("Wollowitz", actor.getName());
+		
+		actorObservableBean.getProperty(actor.getName()).addPropertyValueChangeHandler(new PropertyValueChangeHandler<String>() {
+			
+			@Override
+			public void onPropertyValueChange(PropertyValueChangeEvent<String> event) {
+				throw new RuntimeException("Should not occur.");
+			}
+			
+		});
+		
+		actor.setName("Sheldon");
+		actor.setAge(23);
+	}
+	
+	@Test
+	public void testSimpleWeakMapping() {
+		final ObservableBeanFactory actorObservableBeanFactory = GWT.create(ObservableBeanFactory.class);
+		
+		final ObservableBean<Actor> actorObservableBean = actorObservableBeanFactory.create();
+		assertEquals(actorObservableBean, ObservableBeans.get(actorObservableBean.as()));
+	}
+	
+	@Test
+	public void testComplexWeakMapping() {
+		final ObservableBeanFactory actorObservableBeanFactory = GWT.create(ObservableBeanFactory.class);
+		
+		final Actor actor = new ActorBean("Sheldon", 23);
+		final ObservableBean<Actor> actorObservableBean = actorObservableBeanFactory.create(actor);
+		
+		assertEquals(actorObservableBean, ObservableBeans.get(actorObservableBean.as()));
+		assertEquals(actorObservableBean, ObservableBeans.get(actor));
 	}
 	
 }

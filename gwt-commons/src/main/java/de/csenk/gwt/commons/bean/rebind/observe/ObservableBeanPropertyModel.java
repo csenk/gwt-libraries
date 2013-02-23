@@ -16,12 +16,85 @@
 
 package de.csenk.gwt.commons.bean.rebind.observe;
 
+import com.google.gwt.core.ext.typeinfo.JType;
+import com.google.web.bindery.autobean.gwt.rebind.model.JBeanMethod;
+
 /**
  * @author senk.christian@googlemail.com
  *
  */
 public class ObservableBeanPropertyModel {
 
-	
+	/**
+	 * @param name
+	 * @param type 
+	 * @param accessors 
+	 * @return
+	 */
+	public static ObservableBeanPropertyModel create(String name, JType type, ObservableBeanMethodModel[] accessors) {
+		final ObservableBeanMethodModel getter = determineAccessor(JBeanMethod.GET, accessors);
+		final ObservableBeanMethodModel setter = determineAccessor(JBeanMethod.SET, accessors);
+		
+		return new ObservableBeanPropertyModel(name, type, getter, setter);
+	}
+
+	/**
+	 * @param action
+	 * @param accessors
+	 * @return
+	 */
+	private static ObservableBeanMethodModel determineAccessor(JBeanMethod action, ObservableBeanMethodModel[] accessors) {
+		for (int accessorIndex = 0; accessorIndex < accessors.length; accessorIndex++)
+			if (accessors[accessorIndex].getAction() == action)
+				return accessors[accessorIndex];
+
+		return null;
+	}
+
+	private final String name;
+	private final JType type;
+	private final ObservableBeanMethodModel getter;
+	private final ObservableBeanMethodModel setter;
+
+	/**
+	 * @param name
+	 * @param type 
+	 * @param setter 
+	 * @param getter 
+	 */
+	public ObservableBeanPropertyModel(String name, JType type, ObservableBeanMethodModel getter, ObservableBeanMethodModel setter) {
+		this.name = name;
+		this.type = type;
+		this.getter = getter;
+		this.setter = setter;
+	}
+
+	/**
+	 * @return the getter
+	 */
+	public ObservableBeanMethodModel getGetter() {
+		return getter;
+	}
+
+	/**
+	 * @return the setter
+	 */
+	public ObservableBeanMethodModel getSetter() {
+		return setter;
+	}
+
+	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @return the type
+	 */
+	public JType getType() {
+		return type;
+	}
 	
 }

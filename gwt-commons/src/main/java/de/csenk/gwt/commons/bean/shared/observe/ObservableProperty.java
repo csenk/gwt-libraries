@@ -18,7 +18,8 @@ package de.csenk.gwt.commons.bean.shared.observe;
 
 
 /**
+ * A controller for an implementation of a bean property.
+ * 
  * @author senk.christian@googlemail.com
- *
  */
 public interface ObservableProperty<V> extends HasPropertyValueChangeHandlers<V> { }

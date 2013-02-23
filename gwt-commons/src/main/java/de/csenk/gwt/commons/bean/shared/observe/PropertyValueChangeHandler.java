@@ -19,8 +19,9 @@ package de.csenk.gwt.commons.bean.shared.observe;
 import com.google.gwt.event.shared.EventHandler;
 
 /**
+ * Handler interface for {@link PropertyValueChangeEvent} events.
+ * 
  * @author senk.christian@googlemail.com
- *
  */
 public interface PropertyValueChangeHandler<T> extends EventHandler {
 

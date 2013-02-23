@@ -42,7 +42,30 @@ public abstract class AbstractObservableProperty<V> implements ObservablePropert
 	/**
 	 * @param value
 	 */
-	public abstract void set(V value);
+	public abstract void setValue(V value);
+	
+	/**
+	 * @return
+	 */
+	public abstract V getValue();
+	
+	/**
+	 * @param value
+	 */
+	public void set(V value) {
+		final V oldValue = getValue();
+		setValue(value);
+		
+		if (!(oldValue == value || (oldValue != null && oldValue.equals(value))))
+			fireEvent(new PropertyValueChangeEvent<V>(oldValue, value));
+	}
+	
+	/**
+	 * @return
+	 */
+	public V get() {
+		return getValue();
+	}
 
 	/**
 	 * {@inheritDoc}

@@ -19,16 +19,22 @@ package de.csenk.gwt.commons.bean.shared.observe;
 import com.google.gwt.core.client.impl.WeakMapping;
 
 /**
+ * Just some usefull methods regarding {@link ObservableBean}s.
+ * 
  * @author senk.christian@googlemail.com
- *
  */
 public final class ObservableBeans {
 
+	/**
+	 * Seriously?
+	 */
 	private ObservableBeans() {}
 	
 	/**
-	 * @param delegate
-	 * @return
+	 * Returns an {@link ObservableBean} for a {@code delegate} if any was previously created.
+	 *
+	 * @param delegate the delegate object.
+	 * @return an {@link ObservableBean} instance or {@code null} if no {@link ObservableBean} could be associated with the {@code delegate}.
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> ObservableBean<T> get(T delegate) {

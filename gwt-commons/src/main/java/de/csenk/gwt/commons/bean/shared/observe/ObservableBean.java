@@ -16,22 +16,41 @@
 
 package de.csenk.gwt.commons.bean.shared.observe;
 
-
-
 /**
+ * A controller for an implementation of a bean interface. Instances of
+ * ObservableBeans are obtained from an {@link ObservableBeanFactory}.
+ * 
+ * @param <T> the type of interface that will be wrapped.
+ * 
  * @author senk.christian@googlemail.com
- *
  */
 public interface ObservableBean<T> {
 
 	/**
-	 * @return
+	 * Returns a proxy implementation of the <code>T</code> interface which will
+	 * delegate to the underlying wrapped object, if any.
+	 * 
+	 * @return a proxy that delegates to the wrapped object
 	 */
 	T as();
 	
 	/**
-	 * @param propertyReference
-	 * @return
+	 * Returns a controller for a particular bean property.
+	 * As {@code propertyReference} you simply use the property getter.
+	 * 
+	 * <pre>
+	 * final ObservableBean<Actor> actorObservableBean = actorObservableBeanFactory.create();
+	 * final Actor actor = actorObservableBean.as();
+	 * 
+	 * actorObservableBean.getProperty(actor.getName());
+	 * </pre>
+	 * 
+	 * To be truth, this is a bit magic and can be a little confusing because the actual property value
+	 * isn't used to return the {@link ObservableProperty}. Instead the {@link ObservableBean} remembers
+	 * the last property accessed and returns it here.
+	 * 
+	 * @param propertyReference actual discarded reference to the property value.
+	 * @return the {@link ObservableProperty} associated with the last accessed bean property.
 	 */
 	<V> ObservableProperty<V> getProperty(V propertyReference);
 	

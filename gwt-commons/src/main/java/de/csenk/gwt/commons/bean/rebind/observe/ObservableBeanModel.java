@@ -21,10 +21,18 @@ import java.util.Set;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
+import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.ext.typeinfo.JType;
+import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.web.bindery.autobean.gwt.rebind.model.JBeanMethod;
 
 /**
@@ -34,32 +42,86 @@ import com.google.web.bindery.autobean.gwt.rebind.model.JBeanMethod;
 public class ObservableBeanModel {
 
 	/**
-	 * @param sourceType
+	 * @param logger 
+	 * @param type
 	 * @return
+	 * @throws UnableToCompleteException 
 	 */
-	public static ObservableBeanModel create(JClassType sourceType) {
-		final String topLevelSourceTypeName = sourceType.getName().replace('.', '_');
-		final String simpleTargetTypeName = topLevelSourceTypeName + "ObservableBean";
+	public static ObservableBeanModel create(TreeLogger logger, JClassType type) throws UnableToCompleteException {
+		final String topLevelTypeName = type.getName().replace('.', '_');
+		final String simpleImplementationTypeName = topLevelTypeName + "ObservableBean";
 		
-		final String packageName = sourceType.getPackage().getName();
-		final String qualifiedTargetTypeName = packageName + "." + simpleTargetTypeName;
+		final String packageName = type.getPackage().getName();
+		final String qualifiedImplementationTypeName = packageName + "." + simpleImplementationTypeName;
 		
-		final Set<ObservableBeanMethodModel> methods = modelMethods(sourceType);
-		final Map<String, ObservableBeanPropertyModel> properties = modelProperties(methods);
+		final Set<ObservableBeanMethodModel> methods = modelMethods(type);
+		final Map<String, ObservableBeanPropertyModel> properties = modelProperties(logger, methods, type.getOracle());
 		
-		return new ObservableBeanModel(sourceType, topLevelSourceTypeName, simpleTargetTypeName, qualifiedTargetTypeName, methods);
+		return new ObservableBeanModel(
+				type, 
+				topLevelTypeName, 
+				simpleImplementationTypeName, 
+				qualifiedImplementationTypeName, 
+				methods,
+				properties);
 	}
 
 	/**
+	 * @param logger 
 	 * @param methods
+	 * @param typeOracle 
 	 * @return
+	 * @throws UnableToCompleteException 
 	 */
-	private static Map<String, ObservableBeanPropertyModel> modelProperties(Set<ObservableBeanMethodModel> methods) {
+	private static Map<String, ObservableBeanPropertyModel> modelProperties(TreeLogger logger, Set<ObservableBeanMethodModel> methods, TypeOracle typeOracle) throws UnableToCompleteException {
+		final Multimap<String, ObservableBeanMethodModel> associatedMethods = LinkedListMultimap.create();
+		for (ObservableBeanMethodModel methodModel : methods) {
+			final JBeanMethod action = methodModel.getAction();
+			if (action != JBeanMethod.SET && action != JBeanMethod.GET)
+				continue;
+			
+			final String propertyName = action.inferName(methodModel.getMethod());
+			associatedMethods.put(propertyName, methodModel);
+		}
+		
 		final Map<String, ObservableBeanPropertyModel> properties = Maps.newHashMap();
-		
-		
+		for (String propertyName : associatedMethods.keySet()) {
+			if (properties.containsKey(propertyName))
+				die(logger, "Multiple getters/setters for property %s. Check spelling and for correct camel case.", propertyName);
+			
+			final ObservableBeanMethodModel[] propertyAccessors = Iterables.toArray(associatedMethods.get(propertyName), ObservableBeanMethodModel.class);
+			final JType propertyType = determinePropertyType(propertyAccessors[0], typeOracle);
+			
+			properties.put(propertyName, ObservableBeanPropertyModel.create(propertyName, propertyType, propertyAccessors));
+		}
 		
 		return ImmutableMap.copyOf(properties);
+	}
+
+	/**
+	 * @param logger
+	 * @param msg
+	 * @throws UnableToCompleteException 
+	 */
+	private static void die(TreeLogger logger, String msg, Object... args) throws UnableToCompleteException {
+		logger.log(Type.ERROR, String.format(msg, args));
+		throw new UnableToCompleteException();
+	}
+
+	/**
+	 * @param typeOracle 
+	 * @param propertyAccessors
+	 * @return
+	 */
+	private static JType determinePropertyType(ObservableBeanMethodModel methodModel, TypeOracle typeOracle) {
+		final JBeanMethod action = methodModel.getAction();
+		final JMethod method = methodModel.getMethod();
+		
+		final JType type = action == JBeanMethod.SET ? method.getParameters()[0].getType() : methodModel.getMethod().getReturnType();
+		if (type.isPrimitive() != null)
+			return typeOracle.findType(type.isPrimitive().getQualifiedBoxedSourceName());
+		
+		return type;
 	}
 
 	/**
@@ -83,51 +145,54 @@ public class ObservableBeanModel {
 		return ImmutableSet.copyOf(methods);
 	}
 
-	private final JClassType sourceType;
+	private final JClassType type;
 	private final String topLevelSourceTypeName;
 	private final String simpleTargetTypeName;
 	private final String qualifiedTargetTypeName;
 	private final Set<ObservableBeanMethodModel> methods;
+	private final Map<String, ObservableBeanPropertyModel> properties;
 
 	/**
-	 * @param sourceType
+	 * @param type
 	 * @param simpleTargetTypeName
 	 * @param qualifiedTargetTypeName 
 	 * @param methods 
+	 * @param properties 
 	 */
-	public ObservableBeanModel(JClassType sourceType, String topLevelSourceTypeName, String simpleTargetTypeName, String qualifiedTargetTypeName, Set<ObservableBeanMethodModel> methods) {
-		this.sourceType = sourceType;
+	public ObservableBeanModel(JClassType type, String topLevelSourceTypeName, String simpleTargetTypeName, String qualifiedTargetTypeName, Set<ObservableBeanMethodModel> methods, Map<String, ObservableBeanPropertyModel> properties) {
+		this.type = type;
 		this.topLevelSourceTypeName = topLevelSourceTypeName;
 		this.simpleTargetTypeName = simpleTargetTypeName;
 		this.qualifiedTargetTypeName = qualifiedTargetTypeName;
 		this.methods = methods;
+		this.properties = properties;
 	}
 	
 	/**
 	 * @return the beanInterface
 	 */
-	public JClassType getSourceType() {
-		return sourceType;
+	public JClassType getType() {
+		return type;
 	}
 
 	/**
 	 * @return the sourceTypeName
 	 */
-	public String getTopLevelSourceTypeName() {
+	public String getTopLevelTypeName() {
 		return topLevelSourceTypeName;
 	}
 
 	/**
 	 * @return the simpleTargetTypeName
 	 */
-	public String getSimpleTargetTypeName() {
+	public String getSimpleImplementationTypeName() {
 		return simpleTargetTypeName;
 	}
 
 	/**
 	 * @return the qualifiedTargetTypeName
 	 */
-	public String getQualifiedTargetTypeName() {
+	public String getQualifiedImplementationTypeName() {
 		return qualifiedTargetTypeName;
 	}
 
@@ -136,6 +201,13 @@ public class ObservableBeanModel {
 	 */
 	public Set<ObservableBeanMethodModel> getMethods() {
 		return methods;
+	}
+
+	/**
+	 * @return the properties
+	 */
+	public Map<String, ObservableBeanPropertyModel> getProperties() {
+		return properties;
 	}
 
 }

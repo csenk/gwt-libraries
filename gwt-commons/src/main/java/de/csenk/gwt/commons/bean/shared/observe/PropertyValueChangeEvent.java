@@ -19,8 +19,9 @@ package de.csenk.gwt.commons.bean.shared.observe;
 import com.google.gwt.event.shared.GwtEvent;
 
 /**
+ * Event which is raised after a property value has changed.
+ * 
  * @author senk.christian@googlemail.com
- *
  */
 public class PropertyValueChangeEvent<T> extends GwtEvent<PropertyValueChangeHandler<T>> {
 

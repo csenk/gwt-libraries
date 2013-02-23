@@ -17,7 +17,18 @@
 package de.csenk.gwt.commons.bean.shared.observe;
 
 /**
+ * A tag interface for the ObservableBean generator. Instances of ObservableBeans are
+ * created by declaring factory methods on a subtype of this interface.
+ * 
+ * <pre>
+ * interface MyFactory extends ObservableBeanFactory {
+ * 	// A factory method for a simple bean
+ * 	ObservableBean&lt;BeanInterface> beanInterface();
+ * 	// A factory method for a wrapper bean
+ * 	ObservableBean&lt;ArbitraryInterface> wrapper(ArbitraryInterface delegate);
+ * }
+ * </pre>
+ * 
  * @author senk.christian@googlemail.com
- *
  */
 public interface ObservableBeanFactory {}

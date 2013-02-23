@@ -46,9 +46,16 @@ public class ObservableBeanFactoryMethodModel {
 			die(logger, "The %s parameterization is not an interface", beanInterface.getQualifiedSourceName());
 		}
 		
-		final ObservableBeanModel beanModel = ObservableBeanModel.create(beanInterface);
-
-		return new ObservableBeanFactoryMethodModel(method, beanModel);
+		if (method.getParameters().length > 0 && method.getParameters().length != 1)
+			die(logger, "Factory methods can only accept one parameter that can be observed by the an ObservableBean.");
+		
+		final JClassType parameterType = method.getParameters().length > 0 ? method.getParameters()[0].getType().isClassOrInterface() : null;
+		if (parameterType != null && !beanInterface.isAssignableFrom(parameterType))
+			die(logger, "Observed beans must be at least assignable to the type of the ObservableBean.");
+		
+		
+		final ObservableBeanModel beanModel = ObservableBeanModel.create(logger, beanInterface);
+		return new ObservableBeanFactoryMethodModel(method, beanModel, parameterType);
 	}
 	
 	/**
@@ -64,14 +71,17 @@ public class ObservableBeanFactoryMethodModel {
 	
 	private final JMethod method;
 	private final ObservableBeanModel beanModel;
+	private final JClassType parameterType;
 	
 	/**
 	 * @param method
 	 * @param beanModel
+	 * @param parameterType 
 	 */
-	private ObservableBeanFactoryMethodModel(JMethod method, ObservableBeanModel beanModel) {
+	private ObservableBeanFactoryMethodModel(JMethod method, ObservableBeanModel beanModel, JClassType parameterType) {
 		this.method = method;
 		this.beanModel = beanModel;
+		this.parameterType = parameterType;
 	}
 
 	/**
@@ -86,6 +96,13 @@ public class ObservableBeanFactoryMethodModel {
 	 */
 	public ObservableBeanModel getBeanModel() {
 		return beanModel;
+	}
+
+	/**
+	 * @return the parameterType
+	 */
+	public JClassType getParameterType() {
+		return parameterType;
 	}
 	
 }
