@@ -138,11 +138,11 @@ public class ObservableBeanFactoryImplTest extends GWTTestCase {
 		final ObservableBean<Actor> actorObservableBean = actorObservableBeanFactory.create();
 		final Actor actor = actorObservableBean.as();
 		
-actor.setName("Sheldon"); 	//Event -> oldValue=null, newValue="Sheldon"
-actor.setName("Sheldon"); 	//No event
-actor.setName("Wollowitz"); 	//Event -> oldValue="Sheldon", newValue="Wollowitz"
+		actor.setName("Sheldon"); 		//Event -> oldValue=null, newValue="Sheldon"
+		actor.setName("Sheldon"); 		//No event
+		actor.setName("Wollowitz"); 	//Event -> oldValue="Sheldon", newValue="Wollowitz"
 		
-		assertEquals("Sheldon", actor.getName());
+		assertEquals("Wollowitz", actor.getName());
 		
 		assertEquals(0, actor.getAge());
 	}
