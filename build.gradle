@@ -14,7 +14,7 @@ subprojects {
 	}
 }
 
-ext.gwt_version = '2.4.0'
+ext.gwt_version = '2.5.0'
 ext.guice_version = '3.0'
 ext.gin_version = '2.0.0'
 

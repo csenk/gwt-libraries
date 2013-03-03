@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module>
+    <inherits name="com.google.common.collect.Collect" />
+    <inherits name="com.google.gwt.editor.Editor" />
+    
+	<source path="editor/client" />
+	<source path="editor/shared" />
+
+	<generate-with class="de.csenk.gwt.commons.editor.rebind.AutoFlushBeanEditorDriverGenerator">
+		<when-type-assignable class="de.csenk.gwt.commons.editor.shared.AutoFlushBeanEditorDriver" />
+	</generate-with>
+</module>
